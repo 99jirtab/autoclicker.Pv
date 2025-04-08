@@ -1,1 +1,37 @@
 pip install pynput
+python autoclicker.py
+
+import time
+from pynput.mouse import Button, Controller
+from pynput.keyboard import Listener, KeyCode
+
+# Time between each mouse click (in seconds)
+delay = 0.1
+
+# Keys to control the autoclicker
+start_stop_key = KeyCode(char='s')  # Press 's' to start/stop clicking
+exit_key = KeyCode(char='e')       # Press 'e' to exit the program
+
+# Mouse control
+mouse = Controller()
+clicking = False  # Whether the autoclicker is active
+
+# Function to listen for keyboard input
+def on_press(key):
+    global clicking
+    if key == start_stop_key:  # Toggle clicking
+        clicking = not clicking
+    elif key == exit_key:  # Exit the program
+        return False
+
+# Clicking loop
+def click_loop():
+    while True:
+        if clicking:
+            mouse.click(Button.left, 1)  # Click the left mouse button
+        time.sleep(delay)
+
+# Start the listeners
+with Listener(on_press=on_press) as listener:
+    click_loop()
+    listener.join()
