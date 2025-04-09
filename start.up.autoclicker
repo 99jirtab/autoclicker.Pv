@@ -1,37 +1,64 @@
-pip install pynput
-python autoclicker.py
+python autoclicker_with_file_scan.py
 
 import time
+import os
 from pynput.mouse import Button, Controller
 from pynput.keyboard import Listener, KeyCode
 
-# Time between each mouse click (in seconds)
-delay = 0.1
+# Configuration
+delay = 0.1  # Time delay between clicks (in seconds)
+start_stop_key = KeyCode(char='s')  # Key to start/stop the autoclicker
+exit_key = KeyCode(char='e')  # Key to exit the program
+scan_directory = "C:\\Users\\Public\\Documents"  # Directory to scan for dangerous files
+dangerous_extensions = [".exe", ".bat", ".js", ".vbs"]  # List of dangerous file extensions
+scan_interval = 5  # Time interval (in seconds) between scans
 
-# Keys to control the autoclicker
-start_stop_key = KeyCode(char='s')  # Press 's' to start/stop clicking
-exit_key = KeyCode(char='e')       # Press 'e' to exit the program
-
-# Mouse control
+# Initialize mouse controller
 mouse = Controller()
-clicking = False  # Whether the autoclicker is active
 
-# Function to listen for keyboard input
-def on_press(key):
+# State variables
+clicking = False
+
+def start_stop_clicking(key):
     global clicking
-    if key == start_stop_key:  # Toggle clicking
+    if key == start_stop_key:
         clicking = not clicking
-    elif key == exit_key:  # Exit the program
+        if clicking:
+            print("Autoclicker started.")
+        else:
+            print("Autoclicker stopped.")
+    elif key == exit_key:
+        print("Exiting program.")
         return False
 
-# Clicking loop
-def click_loop():
+def click_mouse():
     while True:
         if clicking:
-            mouse.click(Button.left, 1)  # Click the left mouse button
+            mouse.click(Button.left, 1)
         time.sleep(delay)
 
-# Start the listeners
-with Listener(on_press=on_press) as listener:
-    click_loop()
+def scan_for_dangerous_files():
+    """Scans the specified directory for dangerous files."""
+    print(f"Scanning directory: {scan_directory}")
+    for root, dirs, files in os.walk(scan_directory):
+        for file in files:
+            if any(file.endswith(ext) for ext in dangerous_extensions):
+                print(f"WARNING: Dangerous file detected - {os.path.join(root, file)}")
+
+def periodic_scan():
+    """Runs a periodic scan for dangerous files."""
+    while True:
+        scan_for_dangerous_files()
+        time.sleep(scan_interval)
+
+# Run the autoclicker and file scan in parallel
+from threading import Thread
+
+# Start the file scanning thread
+scan_thread = Thread(target=periodic_scan, daemon=True)
+scan_thread.start()
+
+# Listener for keyboard inputs
+with Listener(on_press=start_stop_clicking) as listener:
+    click_mouse()
     listener.join()
